@@ -1,6 +1,6 @@
 #include "interrupts.h"
 #include "screen/stdio.h"
-#include "bootloader_stdlib.h"
+#include "bootloader/bootloader_stdlib.h"
 #include "cpuio/cpuio.h"
 
 #define STR_HELPER(x) #x
@@ -69,53 +69,52 @@ IRQ_HANDLER_STUB(13)
 IRQ_HANDLER_STUB(14)
 IRQ_HANDLER_STUB(15)
 
-
-void setup_default_exception_handler()
+static void irq_setup_stub_trap_handlers()
 {
-	setup_interrupt_gate(0, EXCEPTION_HANDLER(0));
-	setup_interrupt_gate(1, EXCEPTION_HANDLER(1));
-	setup_interrupt_gate(2, EXCEPTION_HANDLER(2));
-	setup_interrupt_gate(3, EXCEPTION_HANDLER(3));
-	setup_interrupt_gate(4, EXCEPTION_HANDLER(4));
-	setup_interrupt_gate(5, EXCEPTION_HANDLER(5));
-	setup_interrupt_gate(6, EXCEPTION_HANDLER(6));
-	setup_interrupt_gate(7, EXCEPTION_HANDLER(7));
-	setup_interrupt_gate(8, EXCEPTION_HANDLER(8));
-	setup_interrupt_gate(9, EXCEPTION_HANDLER(9));
-	setup_interrupt_gate(10, EXCEPTION_HANDLER(10));
-	setup_interrupt_gate(11, EXCEPTION_HANDLER(11));
-	setup_interrupt_gate(12, EXCEPTION_HANDLER(12));
-	setup_interrupt_gate(13, EXCEPTION_HANDLER(13));
-	setup_interrupt_gate(14, EXCEPTION_HANDLER(14));
-	setup_interrupt_gate(16, EXCEPTION_HANDLER(16));
-	setup_interrupt_gate(17, EXCEPTION_HANDLER(17));
-	setup_interrupt_gate(18, EXCEPTION_HANDLER(18));
-	setup_interrupt_gate(19, EXCEPTION_HANDLER(19));
-	setup_interrupt_gate(20, EXCEPTION_HANDLER(20));
-	setup_interrupt_gate(21, EXCEPTION_HANDLER(21));
-	setup_interrupt_gate(28, EXCEPTION_HANDLER(28));
-	setup_interrupt_gate(29, EXCEPTION_HANDLER(29));
-	setup_interrupt_gate(30, EXCEPTION_HANDLER(30));
+	trap_set_gate(0, EXCEPTION_HANDLER(0));
+	trap_set_gate(1, EXCEPTION_HANDLER(1));
+	trap_set_gate(2, EXCEPTION_HANDLER(2));
+	trap_set_gate(3, EXCEPTION_HANDLER(3));
+	trap_set_gate(4, EXCEPTION_HANDLER(4));
+	trap_set_gate(5, EXCEPTION_HANDLER(5));
+	trap_set_gate(6, EXCEPTION_HANDLER(6));
+	trap_set_gate(7, EXCEPTION_HANDLER(7));
+	trap_set_gate(8, EXCEPTION_HANDLER(8));
+	trap_set_gate(9, EXCEPTION_HANDLER(9));
+	trap_set_gate(10, EXCEPTION_HANDLER(10));
+	trap_set_gate(11, EXCEPTION_HANDLER(11));
+	trap_set_gate(12, EXCEPTION_HANDLER(12));
+	trap_set_gate(13, EXCEPTION_HANDLER(13));
+	trap_set_gate(14, EXCEPTION_HANDLER(14));
+	trap_set_gate(16, EXCEPTION_HANDLER(16));
+	trap_set_gate(17, EXCEPTION_HANDLER(17));
+	trap_set_gate(18, EXCEPTION_HANDLER(18));
+	trap_set_gate(19, EXCEPTION_HANDLER(19));
+	trap_set_gate(20, EXCEPTION_HANDLER(20));
+	trap_set_gate(21, EXCEPTION_HANDLER(21));
+	trap_set_gate(28, EXCEPTION_HANDLER(28));
+	trap_set_gate(29, EXCEPTION_HANDLER(29));
+	trap_set_gate(30, EXCEPTION_HANDLER(30));
 
-	setup_interrupt_gate(32, IRQ_HANDLER(0));
-	setup_interrupt_gate(33, IRQ_HANDLER(1));
-	setup_interrupt_gate(34, IRQ_HANDLER(2));
-	setup_interrupt_gate(35, IRQ_HANDLER(3));
-	setup_interrupt_gate(36, IRQ_HANDLER(4));
-	setup_interrupt_gate(37, IRQ_HANDLER(5));
-	setup_interrupt_gate(38, IRQ_HANDLER(6));
-	setup_interrupt_gate(39, IRQ_HANDLER(7));
-	setup_interrupt_gate(40, IRQ_HANDLER(8));
-	setup_interrupt_gate(41, IRQ_HANDLER(9));
-	setup_interrupt_gate(42, IRQ_HANDLER(10));
-	setup_interrupt_gate(43, IRQ_HANDLER(11));
-	setup_interrupt_gate(44, IRQ_HANDLER(12));
-	setup_interrupt_gate(45, IRQ_HANDLER(13));
-	setup_interrupt_gate(46, IRQ_HANDLER(14));
-	setup_interrupt_gate(47, IRQ_HANDLER(15));
+	trap_set_gate(32, IRQ_HANDLER(0));
+	trap_set_gate(33, IRQ_HANDLER(1));
+	trap_set_gate(34, IRQ_HANDLER(2));
+	trap_set_gate(35, IRQ_HANDLER(3));
+	trap_set_gate(36, IRQ_HANDLER(4));
+	trap_set_gate(37, IRQ_HANDLER(5));
+	trap_set_gate(38, IRQ_HANDLER(6));
+	trap_set_gate(39, IRQ_HANDLER(7));
+	trap_set_gate(40, IRQ_HANDLER(8));
+	trap_set_gate(41, IRQ_HANDLER(9));
+	trap_set_gate(42, IRQ_HANDLER(10));
+	trap_set_gate(43, IRQ_HANDLER(11));
+	trap_set_gate(44, IRQ_HANDLER(12));
+	trap_set_gate(45, IRQ_HANDLER(13));
+	trap_set_gate(46, IRQ_HANDLER(14));
+	trap_set_gate(47, IRQ_HANDLER(15));
 }
 
-void remap_irqs(void)
+static void irq_remap(void)
 {
 	outb(0x20, 0x11);
 	outb(0xA0, 0x11);
@@ -129,15 +128,14 @@ void remap_irqs(void)
 
 /**
  * Set up an empty interrupt descriptor table
- * Expects that interrupts are disabled (??? not tested yet if it works when 
- * interrupts are enabled)
+ * Expects that interrupts are disabled
  */
-void setup_idt(void)
+void trap_idt_setup(void)
 {
 	memset(&idt, 0, sizeof(idt));
 
-	setup_default_exception_handler();
-	remap_irqs();
+	irq_setup_stub_trap_handlers();
+	irq_remap();
 
 	idtr.limit = sizeof(idt) - 1;
 	idtr.base = idt;
@@ -145,17 +143,17 @@ void setup_idt(void)
 	__asm__ __volatile__ ("lidt %0" : : "m"(idtr));
 }
 
-inline void enable_interrupts(void)
+inline void irq_enable(void)
 {
 	__asm__ __volatile__ ("sti");
 }
 
-inline void disable_interrupts(void)
+inline void irq_disable(void)
 {
 	__asm__ __volatile__ ("cli");
 }
 
-void setup_interrupt_gate(int n, void (*handler)(void *))
+void trap_set_gate(int n, void (*handler)(void *))
 {
 	idt[n].offset_low = (uint32_t)handler & 0xFFFF;
 	idt[n].selector = 0x08;

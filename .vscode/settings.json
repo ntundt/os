@@ -4,6 +4,11 @@
 		"video_mem.h": "c",
 		"screen.h": "c",
 		"stdarg.h": "c",
-		"stdint.h": "c"
-	}
+		"stdint.h": "c",
+		"bootloader_stdlib.h": "c",
+		"stdio.h": "c",
+		"floppy.h": "c",
+		"fat16.h": "c"
+	},
+	"makefile.configureOnOpen": true
 }

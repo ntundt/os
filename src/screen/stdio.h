@@ -1,5 +1,5 @@
-#ifndef PRINTF_H
-#define PRINTF_H
+#ifndef STDIO_H
+#define STDIO_H
 
 #include <limits.h>
 
@@ -13,5 +13,11 @@ int printc(const char *fmt, ...);
 char* gets_s(char *buffer, int size);
 
 int init_stdio(void);
+
+#ifdef DEBUG
+#define printfd(...) printf("DEBUG: " __VA_ARGS__)
+#else
+#define printfd(...)
+#endif
 
 #endif

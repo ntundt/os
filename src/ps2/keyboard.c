@@ -1,8 +1,8 @@
 #include "keyboard.h"
-#include "../cpuio/cpuio.h"
-#include "../bootloader_stdlib.h"
-#include "../interrupts.h"
-#include "../screen/stdio.h"
+#include "cpuio/cpuio.h"
+#include "bootloader/bootloader_stdlib.h"
+#include "interrupts.h"
+#include "screen/stdio.h"
 
 int ps2_controller_present(void)
 {
@@ -192,5 +192,5 @@ kb_int_handler_end:
 
 void ps2_kb_set_default_irq_handler()
 {
-	setup_interrupt_gate(33, kb_default_irq_handler);
+	trap_set_gate(33, kb_default_irq_handler);
 }

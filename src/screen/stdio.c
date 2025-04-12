@@ -1,12 +1,12 @@
 #include "stdio.h"
 #include "screen.h"
-#include "../bootloader_stdlib.h"
-#include "../ps2/keyboard.h"
+#include "bootloader/bootloader_stdlib.h"
+#include "ps2/keyboard.h"
 
 #include <limits.h>
 #include <stdarg.h>
 
-void screen_scroll(void)
+static void screen_scroll(void)
 {
 	char c;
 	uint8_t attr;
@@ -21,7 +21,7 @@ void screen_scroll(void)
 	}
 }
 
-void put_char(char c)
+static void put_char(char c)
 {
 	int row, col;
 	screen_get_cursor(&row, &col);
@@ -43,21 +43,21 @@ void put_char(char c)
 	screen_set_cursor(row, col);
 }
 
-void put_string(const char *s)
+static void put_string(const char *s)
 {
 	while (*s) {
 		put_char(*s++);
 	}
 }
 
-void put_int(int n)
+static void put_int(int n)
 {
 	char buf[16];
 	itoa(n, buf, 10);
 	put_string(buf);
 }
 
-void put_hex(int n)
+static void put_hex(int n)
 {
 	char buf[16];
 	itoa(n, buf, 16);
@@ -99,7 +99,7 @@ int printf(const char *fmt, ...)
 	return 0;
 }
 
-int vprintf(const char *fmt, char* ap)
+static int vprintf(const char *fmt, char* ap)
 {
 	while (*fmt != '\0') {
 		if (*fmt == '%') {
@@ -185,7 +185,7 @@ char* gets_s(char *buf, int size)
 	return buf;
 }
 
-void redraw_gets_buffer()
+static void redraw_gets_buffer()
 {
 	screen_set_cursor(buffer_initial_row, buffer_intital_col);
 
@@ -198,7 +198,7 @@ void redraw_gets_buffer()
 	screen_set_cursor(buffer_initial_row, buffer_intital_col + cursor_pos);
 }
 
-void buffer_insert_char(char c)
+static void buffer_insert_char(char c)
 {
 	if (resulting_string_size + 1 > gets_buffer_size) return;
 	if (resulting_string_size != cursor_pos) {
@@ -210,7 +210,7 @@ void buffer_insert_char(char c)
 	resulting_string_size++;
 }
 
-void buffer_remove_char(int forward)
+static void buffer_remove_char(int forward)
 {
 	if (resulting_string_size == 0) return;
 
@@ -225,7 +225,7 @@ void buffer_remove_char(int forward)
 	if (!forward) cursor_pos--;
 }
 
-void buffer_move_cursor(int offset)
+static void buffer_move_cursor(int offset)
 {
 	if (offset == STDIO_BUFFER_POS_END) {
 		cursor_pos = resulting_string_size;
@@ -243,7 +243,7 @@ void buffer_move_cursor(int offset)
 	}
 }
 
-void on_key(uint16_t scancode, uint8_t pressed)
+static void on_key(uint16_t scancode, uint8_t pressed)
 {
 	if (gets_buffer == NULL) return;
 

@@ -1,92 +1,95 @@
-QEMU_PATH_I386 = /mnt/e/Apps/qemu/qemu-system-i386.exe
+CC = gcc
+DEBUG = -DDEBUG
+INCLUDE_PATH = -I./src/
+CC_OPTIONS = -Werror ${INCLUDE_PATH} -fno-builtin ${DEBUG} -nostdlib -fno-pic -g
+QEMU_PATH_I386 = /mnt/c/Apps/qemu/qemu-system-i386.exe
+QEMU_TERMINAL_OPTIONS = -fda ./build/floppy.img
+BUILD_DIR = ./build
 DEBUG_DIR = ./debug
 DEBUG_FILE = bootloader2.o.debug
-TERMINAL_OPTIONS = -drive format=raw,file=./build/floppy.img
-tostripfile = ./build/bootloader2.o
+TOSTRIPFILE = ./build/bootloader2.o
 
+build: ./build/floppy.img
 
-build: build/floppy.img
+run: ./build/floppy.img
+	$(QEMU_PATH_I386) $(QEMU_TERMINAL_OPTIONS)
 
-run: build/floppy.img
-	$(QEMU_PATH_I386) $(TERMINAL_OPTIONS)
-
-debug: build/floppy.img
-	$(QEMU_PATH_I386) $(TERMINAL_OPTIONS) -s -S &
-	objcopy --only-keep-debug "${tostripfile}" "${DEBUG_DIR}/${DEBUG_FILE}"
+debug: ./build/floppy.img
+	$(QEMU_PATH_I386) $(QEMU_TERMINAL_OPTIONS) -s -S &
+	objcopy --only-keep-debug "${TOSTRIPFILE}" "${DEBUG_DIR}/${DEBUG_FILE}"
 	sleep 5
 	gdb -x ./boot.gdb
 
-build/bootloader_stdlib.o: bootloader_stdlib.c
-	gcc -m32 -c bootloader_stdlib.c -o ./build/bootloader_stdlib.o -nostdlib -fno-pic -g
+build/bootloader/bootloader_stdlib.o: ./src/bootloader/bootloader_stdlib.c
+	$(CC) -m32 -c ./src/bootloader/bootloader_stdlib.c -o ./build/bootloader/bootloader_stdlib.o ${CC_OPTIONS}
 
-build/bootloader-writer/bootloader-write: ./bootloader-writer/bootloader-write.c
-	gcc -o build/bootloader-writer/bootloader-write ./bootloader-writer/bootloader-write.c -g
+build/bootloader-writer/bootloader-write: ./src/bootloader-writer/bootloader-write.c
+	$(CC) -o ./build/bootloader-writer/bootloader-write ./src/bootloader-writer/bootloader-write.c -g ${INCLUDE_PATH}
 
-build/boot.bin: boot.asm
-	nasm boot.asm -f bin -o ./build/boot.bin
+build/bootloader/boot.bin: ./src/bootloader/boot.asm
+	nasm ./src/bootloader/boot.asm -f bin -o ./build/bootloader/boot.bin
 
-build/boot2.o: boot2.asm
-	nasm -f elf32 boot2.asm -o ./build/boot2.o
+build/bootloader/boot2.o: ./src/bootloader/boot2.asm
+	nasm -f elf32 ./src/bootloader/boot2.asm -o ./build/bootloader/boot2.o
 
-build/bootloader.o: bootloader.c
-	gcc -m32 -c bootloader.c -o ./build/bootloader.o -nostdlib -fno-pic -O0 -g -fno-builtin
+build/bootloader/bootloader.o: ./src/bootloader/bootloader.c
+	$(CC) -m32 -c ./src/bootloader/bootloader.c -o ./build/bootloader/bootloader.o -O0 ${CC_OPTIONS}
 
-build/bootloader2.o: build/bootloader.o build/boot2.o bootload.sys.ld \
-	build/screen/screen.o build/cpuio/cpuio.o build/bootloader_stdlib.o \
+build/bootloader2.o: build/bootloader/bootloader.o build/bootloader/boot2.o bootload.sys.ld \
+	build/screen/screen.o build/cpuio/cpuio.o build/bootloader/bootloader_stdlib.o \
 	build/screen/stdio.o build/screen/panic.o build/interrupts.o \
-	build/fs/floppy.o build/ps2/keyboard.o
-	ld -m elf_i386 -T bootload.sys.ld -o ./build/bootloader2.o ./build/boot2.o \
-		./build/bootloader.o ./build/screen/screen.o ./build/cpuio/cpuio.o \
-		./build/bootloader_stdlib.o ./build/screen/stdio.o \
+	build/fs/floppy.o build/ps2/keyboard.o build/fs/fat16drv.o
+	ld -m elf_i386 -T bootload.sys.ld -o ./build/bootloader/bootloader2.o ./build/bootloader/boot2.o \
+		./build/bootloader/bootloader.o ./build/screen/screen.o ./build/cpuio/cpuio.o \
+		./build/bootloader/bootloader_stdlib.o ./build/screen/stdio.o \
 		./build/screen/panic.o ./build/interrupts.o ./build/fs/floppy.o \
-		./build/ps2/keyboard.o
+		./build/ps2/keyboard.o ./build/fs/fat16drv.o
 
-build/BOOTLOAD.SYS: build/bootloader2.o
-	objcopy -O binary -j .text -j .bss -j .data -j .rodata ./build/bootloader2.o ./build/BOOTLOAD.SYS
+build/bootloader/BOOTLOAD.SYS: ./build/bootloader2.o
+	objcopy -O binary -j .text -j .bss -j .data -j .rodata ./build/bootloader/bootloader2.o ./build/bootloader/BOOTLOAD.SYS
 
-build/cpuio/cpuio.o: cpuio/cpuio.c
-	gcc -m32 -c cpuio/cpuio.c -o ./build/cpuio/cpuio.o -nostdlib -fno-pic -g
+build/cpuio/cpuio.o: ./src/cpuio/cpuio.c
+	$(CC) -m32 -c ./src/cpuio/cpuio.c -o ./build/cpuio/cpuio.o ${CC_OPTIONS}
 
-build/floppy.img: build/BOOTLOAD.SYS build/boot.bin build/bootloader-writer/bootloader-write
+build/floppy.img: ./build/bootloader/BOOTLOAD.SYS ./build/bootloader/boot.bin ./build/bootloader-writer/bootloader-write
 	dd if=/dev/zero of=build/floppy.img bs=512 count=2880
-	mkdosfs -F 12 build/floppy.img
+	mkdosfs -F 12 ./build/floppy.img
 
-	./build/bootloader-writer/bootloader-write --image ./build/floppy.img --bootloader ./build/boot.bin --fs fat12
+	./build/bootloader-writer/bootloader-write --image ./build/floppy.img --bootloader ./build/bootloader/boot.bin --fs fat12
 
-	sudo losetup /dev/loop0 ./build/floppy.img
-	mkdir ./build/floppy
-	sudo mount /dev/loop0 ./build/floppy
-	sudo cp ./build/BOOTLOAD.SYS ./build/floppy/BOOTLOAD.SYS
-	sudo umount ./build/floppy
-	sudo losetup -d /dev/loop0
-	rm -rf ./build/floppy
+	echo "drive a: file=\"./build/floppy.img\"" > ./build/mtools.conf
+	MTOOLSRC=./build/mtools.conf mcopy ./build/bootloader/BOOTLOAD.SYS a:/BOOTLOAD.SYS
 
-build/fs/floppy.o: fs/floppy.c
-	gcc -m32 -c fs/floppy.c -o ./build/fs/floppy.o -nostdlib -fno-pic -g
+build/fs/fat16drv.o: ./src/fs/fat16drv.c
+	$(CC) -m32 -c ./src/fs/fat16drv.c -o ./build/fs/fat16drv.o ${CC_OPTIONS}
 
-build/screen/screen.o: screen/screen.c
-	gcc -m32 -c screen/screen.c -o ./build/screen/screen.o -nostdlib -fno-pic -g
+build/fs/floppy.o: ./src/fs/floppy.c
+	$(CC) -m32 -c ./src/fs/floppy.c -o ./build/fs/floppy.o ${CC_OPTIONS}
 
-build/screen/stdio.o: screen/stdio.c
-	gcc -m32 -c screen/stdio.c -o ./build/screen/stdio.o -nostdlib -fno-pic -g
+build/screen/screen.o: ./src/screen/screen.c
+	$(CC) -m32 -c ./src/screen/screen.c -o ./build/screen/screen.o ${CC_OPTIONS}
 
-build/screen/panic.o: screen/panic.c
-	gcc -m32 -c screen/panic.c -o ./build/screen/panic.o -nostdlib -fno-pic -g
+build/screen/stdio.o: ./src/screen/stdio.c
+	$(CC) -m32 -c ./src/screen/stdio.c -o ./build/screen/stdio.o ${CC_OPTIONS}
 
-build/interrupts.o: interrupts.c
-	gcc -m32 -c interrupts.c -o ./build/interrupts.o -nostdlib -fno-pic -g -mgeneral-regs-only
+build/screen/panic.o: ./src/screen/panic.c
+	$(CC) -m32 -c ./src/screen/panic.c -o ./build/screen/panic.o ${CC_OPTIONS}
 
-build/ps2/keyboard.o: ps2/keyboard.c
-	gcc -m32 -c ps2/keyboard.c -o ./build/ps2/keyboard.o -nostdlib -fno-pic -g -mgeneral-regs-only
+build/interrupts.o: ./src/interrupts.c
+	$(CC) -m32 -c ./src/interrupts.c -o ./build/interrupts.o -mgeneral-regs-only ${CC_OPTIONS}
+
+build/ps2/keyboard.o: ./src/ps2/keyboard.c
+	$(CC) -m32 -c ./src/ps2/keyboard.c -o ./build/ps2/keyboard.o -mgeneral-regs-only ${CC_OPTIONS}
 
 clean:
-	rm -rf ./build
-	rm -rf ./debug
-	mkdir ./build
-	mkdir ./build/bootloader-writer
-	mkdir ./build/screen
-	mkdir ./build/cpuio
-	mkdir ./build/fs
-	mkdir ./build/ps2
-	mkdir ./debug
-
+	rm -rf ${BUILD_DIR}
+	rm -rf ${DEBUG_DIR}
+	mkdir ${BUILD_DIR}
+	mkdir ${BUILD_DIR}/bootloader-writer
+	mkdir ${BUILD_DIR}/bootloader
+	mkdir ${BUILD_DIR}/cpuio
+	mkdir ${BUILD_DIR}/fs
+	mkdir ${BUILD_DIR}/kernel
+	mkdir ${BUILD_DIR}/ps2
+	mkdir ${BUILD_DIR}/screen
+	mkdir ${DEBUG_DIR}

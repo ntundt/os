@@ -1,5 +1,5 @@
 #include "screen.h"
-#include "../cpuio/cpuio.h"
+#include "cpuio/cpuio.h"
 
 void screen_put_char(int row, int column, char c, uint8_t color)
 {

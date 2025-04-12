@@ -30,14 +30,21 @@ enum FloppyRegisters
 	CONFIGURATION_CONTROL_REGISTER	= 0x3F7  // write-only
 };
 
-void floppy_get_chs(int lba, struct CHS *chs);
+inline static void fdc_get_chs(int lba, struct CHS *chs)
+{
+	chs->cylinder = lba / (FLOPPY_HEADS * FLOPPY_SECTORS_PER_TRACK);
+	chs->head = (lba % (FLOPPY_HEADS * FLOPPY_SECTORS_PER_TRACK)) / FLOPPY_SECTORS_PER_TRACK;
+	chs->sector = (lba % (FLOPPY_HEADS * FLOPPY_SECTORS_PER_TRACK)) % FLOPPY_SECTORS_PER_TRACK + 1;
+}
 
-int floppy_get_lba(struct CHS *chs);
+inline static int fdc_get_lba(struct CHS *chs)
+{
+	return (chs->cylinder * FLOPPY_HEADS + chs->head) * FLOPPY_SECTORS_PER_TRACK + (chs->sector - 1);
+}
 
-int floppy_controller_reinit();
+void fdc_init();
 
-int floppy_read_sector(int drive, struct CHS *chs, int sector_count, uint8_t *buffer);
-
-int floppy_write_sector(int drive, struct CHS *chs, int sector_count, uint8_t *buffer);
+int fdc_read_sector(int drive, struct CHS *chs, int sector_count, uint8_t *buffer);
+int fdc_write_sector(int drive, struct CHS *chs, int sector_count, uint8_t *buffer);
 
 #endif

@@ -16,10 +16,13 @@ struct idtr {
 	struct interrupt_descriptor *base;
 } __attribute__((packed));
 
-void setup_idt(void);
-void setup_interrupt_gate(int n, void (*handler)(void *));
+void trap_idt_setup(void);
 
-void enable_interrupts(void);
-void disable_interrupts(void);
+#define TRAP_EXCEPTION(n) (n)
+#define TRAP_IRQ(n) (n+32)
+void trap_set_gate(int n, void (*handler)(void *));
+
+void irq_enable(void);
+void irq_disable(void);
 
 #endif
