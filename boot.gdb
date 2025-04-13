@@ -1,4 +1,4 @@
-target remote 192.168.100.16:1234
+target remote 192.168.100.28:1234
 file ./debug/bootloader2.o.debug
 layout src
 set disassembly-flavor intel
@@ -9,7 +9,7 @@ set debug-file-directory ./debug
 #set tdesc filename target.xml
 #break *0x7c00
 
-b bootloader_main
+b fs/fat16drv.c:88
 
 alias da = x/8i ($cs << 4) + $eip
 c

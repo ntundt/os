@@ -3,6 +3,12 @@
 
 #include <stdint.h>
 
+#define FAT16_DIRENTRY_FLAG_READONLY 0x01
+#define FAT16_DIRENTRY_FLAG_HIDDEN 0x02
+#define FAT16_DIRENTRY_FLAG_SYSTEM 0x04
+#define FAT16_DIRENTRY_FLAG_VOLUME_NAME 0x08
+#define FAT16_DIRENTRY_FLAG_DIRECTORY 0x10
+
 struct fat16_boot_sector {
 	uint8_t jmp[3];
 	uint8_t oem[8];
@@ -28,7 +34,7 @@ struct fat16_boot_sector {
 	uint16_t boot_sector_signature;
 } __attribute__((packed));
 
-struct fat16_dir {
+struct fat16_direntry {
 	uint8_t name[11];
 	uint8_t attributes;
 	uint8_t nt_reserved;

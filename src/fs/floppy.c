@@ -81,7 +81,7 @@ void dma_floppy_prepare_read(uint32_t phys_addr, uint16_t length) {
 
     // Step 5: Set count
     outb(DMA_COUNT_CH2, 0xFF);
-    outb(DMA_COUNT_CH2, 0x23);
+    outb(DMA_COUNT_CH2, 0x01);
 
     // Step 6: Set page
     outb(DMA_PAGE_PORT, page);
@@ -104,24 +104,25 @@ static void floppy_sense_interrupt(uint8_t *st0, uint8_t *cyl)
 	floppy_send_command(FLOPPY_CMD_SENSE_INT);
 	*st0 = floppy_read_data();
 	*cyl = floppy_read_data();
-	printfd("SENSE_INTERRUPT: st0 = %x, cyl = %x\n", *st0, *cyl);
+	printfd("FLOPPY: [sense_interrupt] st0 = %x, cyl = %x\n", *st0, *cyl);
 }
 
 static void floppy_recalibrate(int drive)
 {
+	printfd("FLOPPY: [recalibrate]\n");
 	floppy_send_command_arg(FLOPPY_CMD_RECALIBRATE, drive);
 	floppy_wait_irq();
 	uint8_t st0, cyl;
 	floppy_sense_interrupt(&st0, &cyl);
 	if (cyl != 0) {
-		printfd("Recalibrate failed, expected cylinder 0, got %d\n", cyl);
-	} else {
-		printfd("Recalibrate successful\n");
+		printfd("FLOPPY: Recalibrate failed, expected cylinder 0, got %d\n", cyl);
 	}
 }
 
 int floppy_seek(int drive, uint8_t cylinder, uint8_t head)
 {
+	printfd("FLOPPY: [seek] drive = %d, cyl = %d, head = %d\n", drive,
+		cylinder, head);
 	floppy_send_command(FLOPPY_CMD_SEEK);
 	floppy_send_command((head << 2) | drive);
 	floppy_send_command(cylinder);
@@ -130,25 +131,30 @@ int floppy_seek(int drive, uint8_t cylinder, uint8_t head)
 
 	uint8_t st0, cyl;
 	floppy_sense_interrupt(&st0, &cyl);
-	printfd("st0 = %x\n", st0);
-	if (cyl != cylinder)
-	{
-		printfd("Seek failed: expected cyl %d, got %d\n", cylinder, cyl);
+	if (cyl != cylinder) {
+		printfd("FLOPPY: Seek failed: expected cyl %d, got %d\n", cylinder, cyl);
 		return -1;
 	}
 
 	return 0;
 }
 
+void floppy_motor_on(int drive)
+{
+	outb(DIGITAL_OUTPUT_REGISTER, 0x1C | drive);
+}
+
 int fdc_read_sector(int drive, struct CHS *chs, int sector_count, uint8_t *buffer)
 {
-	printfd("Starting read_sector: drive=%d C/H/S=%d/%d/%d\n",
+	floppy_recalibrate(drive);
+
+	printfd("FLOPPY: Starting read_sector: drive=%d C/H/S=%d/%d/%d\n",
 		drive, chs->cylinder, chs->head, chs->sector);
 		
-	outb(DIGITAL_OUTPUT_REGISTER, 0x1C | drive); // motor on
+	floppy_motor_on(drive);
 	
 	if (floppy_seek(drive, chs->cylinder, chs->head) != 0) {
-		printfd("Seek failed\n");
+		printfd("FLOPPY: Seek failed\n");
 		return -1;
 	}
 	
@@ -162,13 +168,12 @@ int fdc_read_sector(int drive, struct CHS *chs, int sector_count, uint8_t *buffe
 	floppy_send_command(0x1B);
 	floppy_send_command(0xFF);
 	
-	printfd("Will wait for IRQ\n");
+	printfd("FLOPPY: Will wait for IRQ\n");
 	floppy_wait_irq();
 	
 	uint8_t st[7];
 	for (int i = 0; i < 7; i++) {
 		st[i] = floppy_read_data();
-		printfd("Result byte %d: %x\n", i, st[i]);
 	}
 	
 	uint8_t ST0 = st[0];
@@ -178,15 +183,18 @@ int fdc_read_sector(int drive, struct CHS *chs, int sector_count, uint8_t *buffe
 	uint8_t head = st[4];
 	uint8_t sector = st[5];
 	uint8_t sector_size = st[6];
+
+	printfd("FLOPPY: st0=%x,st1=%x,st2=%x,cyl=%x,head=%x,sect=%x,sect_size=%x\n",
+		ST0, ST1, ST2, cylinder, head, sector, sector_size);
 	
 	memcpy(buffer, (void*)DMA_BUFFER_ADDR, FLOPPY_SECTOR_SIZE * sector_count);
 	
 	if ((ST0 & 0xC0) != 0) {
-		printfd("Error: ST0 indicates error (ST0 = %x)\n", ST0);
+		printfd("FLOPPY: Error: ST0 indicates error (ST0 = %x)\n", ST0);
 		return -1;
 	}	
 	if (sector_size != 2) {
-		printfd("Error: Unexpected sector size code (got %d, expected 2)\n", sector_size);
+		printfd("FLOPPY: Error: Unexpected sector size code (got %d, expected 2)\n", sector_size);
 		return -1;
 	}
 

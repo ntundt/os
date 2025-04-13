@@ -32,9 +32,9 @@ enum FloppyRegisters
 
 inline static void fdc_get_chs(int lba, struct CHS *chs)
 {
-	chs->cylinder = lba / (FLOPPY_HEADS * FLOPPY_SECTORS_PER_TRACK);
 	chs->head = (lba % (FLOPPY_HEADS * FLOPPY_SECTORS_PER_TRACK)) / FLOPPY_SECTORS_PER_TRACK;
-	chs->sector = (lba % (FLOPPY_HEADS * FLOPPY_SECTORS_PER_TRACK)) % FLOPPY_SECTORS_PER_TRACK + 1;
+	chs->cylinder = lba / (FLOPPY_HEADS * FLOPPY_SECTORS_PER_TRACK);
+	chs->sector = (lba % FLOPPY_SECTORS_PER_TRACK + 1);
 }
 
 inline static int fdc_get_lba(struct CHS *chs)

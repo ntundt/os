@@ -77,13 +77,27 @@ load_kernel:
 	printf("Loading the kernel...\n");
 
 	fdc_init();
-	
-	blkdevdescr_t x = fat16_blkdev(0, 0);
-	struct fat16_dir dir_buffer[16];
-	bool finished;
-	fat16_lsdir(&x, "/", dir_buffer, 16, &finished);
 
-	panic("no bootable kernel image found");
+	blkdevdescr_t x = fat16_blkdev(0, 0);
+	struct fat16_direntry dir_buffer[16];
+	bool finished;
+	size_t capacity = sizeof(dir_buffer) / sizeof(struct fat16_direntry);
+	fat16_lsdir(&x, "/BOOT", 0, dir_buffer, &capacity, &finished);
+
+	bool kernel_found = false;
+	for (int i = 0; i < capacity; i++) {
+		printf("%s %d\n", dir_buffer[i].name, dir_buffer[i].file_size_bytes);
+		if (memcmp(dir_buffer[i].name, "VMLINUZ\x20\x20\x20\x20", 11) == 0) {
+			kernel_found = true;
+			break;
+		}
+	}
+
+	if (!kernel_found) {
+		panic("no kernel image found");
+	}
+
+	panic("kernel found but elfloading is not implmented yet");
 
 	void (*kernel_entry)() = (void (*)())KERNEL_ENTRY_ADDRESS;
 	kernel_entry();

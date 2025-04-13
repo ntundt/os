@@ -1,5 +1,5 @@
 CC = gcc
-DEBUG = -DDEBUG
+DEBUG = -DDEBUGD
 INCLUDE_PATH = -I./src/
 CC_OPTIONS = -Werror ${INCLUDE_PATH} -fno-builtin ${DEBUG} -nostdlib -fno-pic -g
 QEMU_PATH_I386 = /mnt/c/Apps/qemu/qemu-system-i386.exe
@@ -7,7 +7,7 @@ QEMU_TERMINAL_OPTIONS = -fda ./build/floppy.img
 BUILD_DIR = ./build
 DEBUG_DIR = ./debug
 DEBUG_FILE = bootloader2.o.debug
-TOSTRIPFILE = ./build/bootloader2.o
+TOSTRIPFILE = ./build/bootloader/bootloader2.o
 
 build: ./build/floppy.img
 
@@ -59,6 +59,8 @@ build/floppy.img: ./build/bootloader/BOOTLOAD.SYS ./build/bootloader/boot.bin ./
 
 	echo "drive a: file=\"./build/floppy.img\"" > ./build/mtools.conf
 	MTOOLSRC=./build/mtools.conf mcopy ./build/bootloader/BOOTLOAD.SYS a:/BOOTLOAD.SYS
+	MTOOLSRC=./build/mtools.conf mmd a:/BOOT
+	MTOOLSRC=./build/mtools.conf mcopy ./build/fs/fat16drv.o a:/BOOT/VMLINUZ
 
 build/fs/fat16drv.o: ./src/fs/fat16drv.c
 	$(CC) -m32 -c ./src/fs/fat16drv.c -o ./build/fs/fat16drv.o ${CC_OPTIONS}
