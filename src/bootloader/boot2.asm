@@ -52,9 +52,9 @@ start_protected_mode:
 	mov [0xb8006], ax
 
 	mov dl, [BOOT_DISK]
-    call bootloader_main
+	call bootloader_main
 
-    hlt
+	hlt
 
 BOOT_DISK: db 0
 
@@ -76,11 +76,11 @@ GDT_start:
 		dw 0x0
 		db 0x0
 		db 0b10010010
-        db 0b11001111
-        db 0x0
+		db 0b11001111
+		db 0x0
 
 	GDT_end:
 
 GDT_descriptor:
-    dw GDT_end - GDT_start - 1
-    dd GDT_start
+	dw GDT_end - GDT_start - 1
+	dd GDT_start

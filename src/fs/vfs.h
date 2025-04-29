@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 typedef struct {
-    uint8_t fdc, drive_num;
+	uint8_t fdc, drive_num;
 } blkdevdescr_t;
 
 void vfs();

@@ -5,14 +5,14 @@
 #include "interrupts.h"
 #include "bootloader/bootloader_stdlib.h"
 
-#define FLOPPY_CMD_READ        0x06
-#define FLOPPY_CMD_WRITE       0x05
-#define FLOPPY_CMD_RECALIBRATE 0x07
-#define FLOPPY_CMD_SENSE_INT   0x08
-#define FLOPPY_CMD_SEEK        0x0F
+#define FLOPPY_CMD_READ		0x06
+#define FLOPPY_CMD_WRITE	0x05
+#define FLOPPY_CMD_RECALIBRATE 	0x07
+#define FLOPPY_CMD_SENSE_INT   	0x08
+#define FLOPPY_CMD_SEEK		0x0F
 
-#define FLOPPY_MSR_RQM        0x80
-#define FLOPPY_MSR_DIO        0x40
+#define FLOPPY_MSR_RQM		0x80
+#define FLOPPY_MSR_DIO		0x40
 
 volatile int floppy_irq_triggered = 0;
 
@@ -52,45 +52,45 @@ static void floppy_write_data(uint8_t val)
 	outb(DATA_FIFO, val);
 }
 
-#define DMA_CHANNEL         2
-#define DMA_BUFFER_ADDR     0x8000  // physical address
-#define DMA_PAGE_PORT       0x81    // Page register for channel 2
-#define DMA_MASK_REG        0x0A
-#define DMA_MODE_REG        0x0B
-#define DMA_CLEAR_FF        0x0C
-#define DMA_ADDR_CH2        0x04
-#define DMA_COUNT_CH2       0x05
+#define DMA_CHANNEL		 2
+#define DMA_BUFFER_ADDR	 0x8000  // physical address
+#define DMA_PAGE_PORT	   0x81	// Page register for channel 2
+#define DMA_MASK_REG		0x0A
+#define DMA_MODE_REG		0x0B
+#define DMA_CLEAR_FF		0x0C
+#define DMA_ADDR_CH2		0x04
+#define DMA_COUNT_CH2	   0x05
 
 void dma_floppy_prepare_read(uint32_t phys_addr, uint16_t length) {
-    uint8_t page = (phys_addr >> 16) & 0xFF;
-    uint16_t offset = phys_addr & 0xFFFF;
-    uint16_t count = length - 1;
+	uint8_t page = (phys_addr >> 16) & 0xFF;
+	uint16_t offset = phys_addr & 0xFFFF;
+	uint16_t count = length - 1;
 
-    // Step 1: Mask channel 2
-    outb(DMA_MASK_REG, 0x06);  // bit 2 (channel), bit 1 (mask), bit 0 = 0 (disable mask write)
+	// Step 1: Mask channel 2
+	outb(DMA_MASK_REG, 0x06);  // bit 2 (channel), bit 1 (mask), bit 0 = 0 (disable mask write)
 
-    // Step 2: Clear flip-flop (internal address/data pointer toggle)
-    outb(DMA_CLEAR_FF, 0xFF);
+	// Step 2: Clear flip-flop (internal address/data pointer toggle)
+	outb(DMA_CLEAR_FF, 0xFF);
 
-    // Step 3: Set address
-    outb(DMA_ADDR_CH2, offset & 0xFF);         // low byte
-    outb(DMA_ADDR_CH2, (offset >> 8) & 0xFF);  // high byte
+	// Step 3: Set address
+	outb(DMA_ADDR_CH2, offset & 0xFF); // low byte
+	outb(DMA_ADDR_CH2, (offset >> 8) & 0xFF); // high byte
 
-    // Step 4: Clear flip-flop again before count
-    outb(DMA_CLEAR_FF, 0xFF);
+	// Step 4: Clear flip-flop again before count
+	outb(DMA_CLEAR_FF, 0xFF);
 
-    // Step 5: Set count
-    outb(DMA_COUNT_CH2, 0xFF);
-    outb(DMA_COUNT_CH2, 0x01);
+	// Step 5: Set count
+	outb(DMA_COUNT_CH2, 0xFF);
+	outb(DMA_COUNT_CH2, 0x01);
 
-    // Step 6: Set page
-    outb(DMA_PAGE_PORT, page);
+	// Step 6: Set page
+	outb(DMA_PAGE_PORT, page);
 
-    // Step 7: Set mode (single transfer, read, channel 2)
-    outb(DMA_MODE_REG, 0x56);  // 0b01 000 110: single, address increment, read, channel 2
+	// Step 7: Set mode (single transfer, read, channel 2)
+	outb(DMA_MODE_REG, 0x56);  // 0b01 000 110: single, address increment, read, channel 2
 
-    // Step 8: Unmask channel 2
-    outb(DMA_MASK_REG, 0x02);
+	// Step 8: Unmask channel 2
+	outb(DMA_MASK_REG, 0x02);
 }
 
 void fdc_init()
