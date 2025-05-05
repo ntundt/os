@@ -25,8 +25,6 @@ static void reboot(void)
 	while (1) { }
 }
 
-static uint8_t iobuf[IOBUF_SIZE];
-
 void bootloader_main(void)
 {
 	screen_clear();
@@ -78,24 +76,14 @@ load_kernel:
 
 	fdc_init();
 
-	blkdevdescr_t x = fat16_blkdev(0, 0);
-	struct fat16_direntry dir_buffer[16];
-	bool finished;
-	size_t capacity = sizeof(dir_buffer) / sizeof(struct fat16_direntry);
-	fat16_lsdir(&x, "/BOOT", 0, dir_buffer, &capacity, &finished);
+	blkdev_t x = fat16_blkdev(0, 0);
 
-	bool kernel_found = false;
-	for (int i = 0; i < capacity; i++) {
-		printf("%s %d\n", dir_buffer[i].name, dir_buffer[i].file_size_bytes);
-		if (memcmp(dir_buffer[i].name, "VMLINUZ\x20\x20\x20\x20", 11) == 0) {
-			kernel_found = true;
-			break;
-		}
-	}
+	fat16_file file;
+	fat16_file *fp = &file;
+	fat16_fopen(&x, "/BOOT/VMLINUZ", &fp);
 
-	if (!kernel_found) {
+	if (fp == NULL)
 		panic("no kernel image found");
-	}
 
 	panic("kernel found but elfloading is not implmented yet");
 

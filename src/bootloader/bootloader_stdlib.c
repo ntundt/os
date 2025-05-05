@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include "bootloader_stdlib.h"
 
 void *memcpy(void *dest, const void *src, size_t n)
@@ -72,6 +74,23 @@ char* strncpy(char* dest, const char* src, size_t n)
 	}
 	*d = 0;
 	return dest;
+}
+
+char *strstr(const char *s1, const char *s2)
+{
+	if (strlen(s2) == 0) return (char *)s1;
+
+	for (uint32_t i = 0; i < strlen(s1) - strlen(s2); ++i) {
+		bool inner_equal = true;
+		for (uint32_t j = 0; j < strlen(s2); ++j) {
+			if (s1[i + j] != s2[j]) {
+				inner_equal = false;
+				break;
+			}
+		}
+		if (inner_equal) return (char *)s1 + i;
+	}
+	return NULL;
 }
 
 int atoi(const char *s)

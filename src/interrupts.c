@@ -9,7 +9,12 @@
 #define EXCEPTION_HANDLER_DEFINITION(number) \
 	__attribute__((interrupt)) void exception_handler_##number(void *stack) \
 	{ \
-		printf("\n\nException " STR(number) " occured somehow."); \
+		struct gp_regs *gprs = stack; \
+		printf("\n\nException " STR(number) " occured somehow.\n" \
+			"eip = %x esp = %x ebp = %x eax = %x ebx = %x\n" \
+			"ecx = %x edx = %x esi = %x edi = %x", gprs->eip, \
+			gprs->esp, gprs->ebp, gprs->eax, gprs->ebx, \
+			gprs->ecx, gprs->edx, gprs->esi, gprs->edi); \
 		__asm__ __volatile__("hlt"); \
 	}
 #define EXCEPTION_HANDLER(number) exception_handler_##number
@@ -18,6 +23,7 @@
 #define IRQ_HANDLER_STUB(number) \
 	__attribute__((interrupt)) void irq_handler_##number(void *stack) \
 	{ \
+		(void) stack; \
 		outb(0x20, 0x20); \
 	}
 #define IRQ_HANDLER(number) irq_handler_##number

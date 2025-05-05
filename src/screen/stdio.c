@@ -250,6 +250,8 @@ static void on_key(uint16_t scancode, uint8_t pressed)
 	static int ctrl_pressed = 0;
 	static int caps_lock_enabled = 0;
 	static int shift_pressed = 0;
+
+	(void) ctrl_pressed;
 	
 	switch (scancode) {
 	case PS2_KEY_ENTER:
@@ -291,10 +293,10 @@ static void on_key(uint16_t scancode, uint8_t pressed)
 
 	if (!pressed) goto on_key_end;
 
-	char *c;
+	char c;
 	int uppercase = caps_lock_enabled ? (shift_pressed ? 0 : 1) : (shift_pressed ? 1 : 0); 
-	if (ps2_kb_scancode_to_ascii(scancode, c)) {
-		buffer_insert_char(uppercase ? (uint8_t)*c ^ 0x20 : *c);
+	if (ps2_kb_scancode_to_ascii(scancode, &c)) {
+		buffer_insert_char(uppercase ? (uint8_t)c ^ 0x20 : c);
 	}
 
 on_key_end:
@@ -303,5 +305,5 @@ on_key_end:
 
 int init_stdio(void)
 {
-	ps2_kb_set_callback(on_key);
+	return ps2_kb_set_callback(on_key);
 }

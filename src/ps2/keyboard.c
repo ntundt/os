@@ -160,6 +160,8 @@ void keyboard_handler(uint16_t scancode, uint8_t pressed)
 
 __attribute__((interrupt)) void kb_default_irq_handler(void *stack)
 {
+	(void) stack;
+
 	uint8_t scancode = inb(0x60);
 
 	static int next_release = 0;

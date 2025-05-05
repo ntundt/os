@@ -5,7 +5,7 @@
 
 typedef struct {
 	uint8_t fdc, drive_num;
-} blkdevdescr_t;
+} blkdev_t;
 
 void vfs();
 

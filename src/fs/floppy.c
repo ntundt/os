@@ -18,6 +18,7 @@ volatile int floppy_irq_triggered = 0;
 
 void floppy_irq_handler(void *stack)
 {
+	(void) stack;
 	floppy_irq_triggered = 1;
 	outb(0x20, 0x20); // PIC EOI
 }
@@ -62,9 +63,11 @@ static void floppy_write_data(uint8_t val)
 #define DMA_COUNT_CH2	   0x05
 
 void dma_floppy_prepare_read(uint32_t phys_addr, uint16_t length) {
+	// TODO: account for length
+	(void) length;
+
 	uint8_t page = (phys_addr >> 16) & 0xFF;
 	uint16_t offset = phys_addr & 0xFFFF;
-	uint16_t count = length - 1;
 
 	// Step 1: Mask channel 2
 	outb(DMA_MASK_REG, 0x06);  // bit 2 (channel), bit 1 (mask), bit 0 = 0 (disable mask write)
@@ -183,6 +186,8 @@ int fdc_read_sector(int drive, struct CHS *chs, int sector_count, uint8_t *buffe
 	uint8_t head = st[4];
 	uint8_t sector = st[5];
 	uint8_t sector_size = st[6];
+
+	(void) ST1; (void) ST2; (void) cylinder; (void) head; (void) sector;
 
 	printfd("FLOPPY: st0=%x,st1=%x,st2=%x,cyl=%x,head=%x,sect=%x,sect_size=%x\n",
 		ST0, ST1, ST2, cylinder, head, sector, sector_size);

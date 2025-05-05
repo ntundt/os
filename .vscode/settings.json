@@ -8,7 +8,9 @@
 		"bootloader_stdlib.h": "c",
 		"stdio.h": "c",
 		"floppy.h": "c",
-		"fat16.h": "c"
+		"fat16.h": "c",
+		"stdbool.h": "c",
+		"cpuio.h": "c"
 	},
 	"makefile.configureOnOpen": true
 }

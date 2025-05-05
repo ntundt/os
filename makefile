@@ -1,7 +1,7 @@
 CC = gcc
-DEBUG = -DDEBUGD
+DEBUG =
 INCLUDE_PATH = -I./src/
-CC_OPTIONS = -Werror ${INCLUDE_PATH} -fno-builtin ${DEBUG} -nostdlib -fno-pic -g
+CC_OPTIONS = -Wall -Wextra ${INCLUDE_PATH} -fno-builtin ${DEBUG} -nostdlib -fno-pic -g
 QEMU_PATH_I386 = /mnt/c/Apps/qemu/qemu-system-i386.exe
 QEMU_TERMINAL_OPTIONS = -fda ./build/floppy.img
 BUILD_DIR = ./build
