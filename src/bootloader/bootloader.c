@@ -33,7 +33,7 @@ void bootloader_main(void)
 
 	trap_idt_setup();
 
-	printf("My OS bootloader v0.0.1\n\n");
+	printf("My OS bootloader v0.0.2\n\n");
 
 	if (ps2_controller_present() != 0) {
 		panic("PS/2 controller not present. There's no way to input anything.\n"
