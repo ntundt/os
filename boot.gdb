@@ -1,5 +1,5 @@
-target remote 192.168.100.28:1234
-file ./debug/bootloader2.o.debug
+target remote 127.0.0.1:1234
+file ./build/vmlinuz
 layout src
 set disassembly-flavor intel
 set debug-file-directory ./debug
@@ -9,7 +9,9 @@ set debug-file-directory ./debug
 #set tdesc filename target.xml
 #break *0x7c00
 
-b fs/fat16drv.c:88
+#b fs/fat16drv.c:88
+b vm_init
+#watch *(unsigned int*)0xc012d4b0 if *(unsigned int*)0xc012d4b0 == 0x0012c003
 
 alias da = x/8i ($cs << 4) + $eip
 c

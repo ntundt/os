@@ -12,7 +12,7 @@ int printc(const char *fmt, ...);
 
 char* gets_s(char *buffer, int size);
 
-int init_stdio(void);
+int stdio_init(void);
 
 #ifdef DEBUG
 #define printfd(...) printf("DEBUG: " __VA_ARGS__)

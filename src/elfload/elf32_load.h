@@ -1,7 +1,7 @@
 #ifndef ELF32_LOAD_H
 #define ELF32_LOAD_H
 
-#include <stdint.h>
+#include <stddef.h>
 
 /**
  * Load elf into memory

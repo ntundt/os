@@ -3,7 +3,7 @@
 #include "floppy.h"
 #include "cpuio/cpuio.h"
 #include "interrupts.h"
-#include "bootloader/bootloader_stdlib.h"
+#include "kernel/kernel_stdlib.h"
 
 #define FLOPPY_CMD_READ		0x06
 #define FLOPPY_CMD_WRITE	0x05

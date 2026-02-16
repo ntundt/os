@@ -1,12 +1,13 @@
 #include "keyboard.h"
 #include "cpuio/cpuio.h"
-#include "bootloader/bootloader_stdlib.h"
+#include "kernel/kernel_stdlib.h"
+#include "kernel/multiboot.h"
 #include "interrupts.h"
 #include "screen/stdio.h"
 
 int ps2_controller_present(void)
 {
-	uint8_t *acpi_table = (uint8_t *)0x000E0000;
+	uint8_t *acpi_table = (uint8_t *) /* 0x000E0000 */ get_rsdp_old();
 	uint8_t acpi_table_target[] = "RSD PTR ";
 
 	if (memcmp(acpi_table, acpi_table_target, 8) != 0) {
@@ -20,7 +21,7 @@ int ps2_controller_present(void)
 	return 0;
 }
 
-void ps2_kb_init(void)
+static void ps2_kb_init(void)
 {
 	// Disable keyboard
 	outb(0x64, 0xAD);
@@ -72,13 +73,13 @@ void ps2_kb_init(void)
 	outb(0x60, 0xFF);
 }
 
-void ps2_kb_set_leds(uint8_t leds)
+/*static void ps2_kb_set_leds(uint8_t leds)
 {
 	outb(0x60, 0xED);
 	outb(0x60, leds);
-}
+}*/
 
-const char PS2_to_ASCII[] = {
+static const char PS2_to_ASCII[] = {
      /* 0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F */
 	0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,'\t', '`',   0, // 0x00
 	0,   0,   0,   0,   0, 'q', '1',   0,   0,   0, 'z', 's', 'a', 'w', '2',   0, // 0x10
@@ -152,7 +153,7 @@ int ps2_kb_scancode_to_ascii(uint16_t scancode, char *ascii)
 	return 1;
 }
 
-void keyboard_handler(uint16_t scancode, uint8_t pressed)
+static void keyboard_handler(uint16_t scancode, uint8_t pressed)
 {
 	if (kb_callback != NULL)
 		kb_callback(scancode, pressed);
@@ -192,7 +193,8 @@ kb_int_handler_end:
 	outb(0x20, 0x20);
 }
 
-void ps2_kb_set_default_irq_handler()
+void ps2_init(void)
 {
 	trap_set_gate(33, kb_default_irq_handler);
+	ps2_kb_init();
 }

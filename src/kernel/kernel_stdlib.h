@@ -1,5 +1,5 @@
-#ifndef BOOTLOADER_STDLIB_H
-#define BOOTLOADER_STDLIB_H
+#ifndef KERNEL_STDLIB_H
+#define KERNEL_STDLIB_H
 
 #include <stdint.h>
 #include <stddef.h>

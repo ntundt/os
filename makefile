@@ -2,71 +2,73 @@ CC = gcc
 DEBUG =
 INCLUDE_PATH = -I./src/
 CC_OPTIONS = -Wall -Wextra ${INCLUDE_PATH} -fno-builtin ${DEBUG} -nostdlib -fno-pic -g
-QEMU_PATH_I386 = /mnt/c/Apps/qemu/qemu-system-i386.exe
-QEMU_TERMINAL_OPTIONS = -fda ./build/floppy.img
+QEMU_PATH_I386 = qemu-system-i386
+QEMU_TERMINAL_OPTIONS = -cdrom ./build/img.iso -d int,cpu_reset -m 2G
 BUILD_DIR = ./build
 DEBUG_DIR = ./debug
-DEBUG_FILE = bootloader2.o.debug
-TOSTRIPFILE = ./build/bootloader/bootloader2.o
+DEBUG_FILE = vmlinuz.debug
+TOSTRIPFILE = ./build/vmlinuz
 
-build: ./build/floppy.img
+build: ./build/img.iso
 
-run: ./build/floppy.img
+run: ./build/img.iso
 	$(QEMU_PATH_I386) $(QEMU_TERMINAL_OPTIONS)
 
-debug: ./build/floppy.img
+debug: ./build/img.iso
 	$(QEMU_PATH_I386) $(QEMU_TERMINAL_OPTIONS) -s -S &
 	objcopy --only-keep-debug "${TOSTRIPFILE}" "${DEBUG_DIR}/${DEBUG_FILE}"
-	sleep 5
+	sleep 1
 	gdb -x ./boot.gdb
-
-build/bootloader/bootloader_stdlib.o: ./src/bootloader/bootloader_stdlib.c
-	$(CC) -m32 -c ./src/bootloader/bootloader_stdlib.c -o ./build/bootloader/bootloader_stdlib.o ${CC_OPTIONS}
-
-build/bootloader-writer/bootloader-write: ./src/bootloader-writer/bootloader-write.c
-	$(CC) -o ./build/bootloader-writer/bootloader-write ./src/bootloader-writer/bootloader-write.c -g ${INCLUDE_PATH}
-
-build/bootloader/boot.bin: ./src/bootloader/boot.asm
-	nasm ./src/bootloader/boot.asm -f bin -o ./build/bootloader/boot.bin
-
-build/bootloader/boot2.o: ./src/bootloader/boot2.asm
-	nasm -f elf32 ./src/bootloader/boot2.asm -o ./build/bootloader/boot2.o
-
-build/bootloader/bootloader.o: ./src/bootloader/bootloader.c
-	$(CC) -m32 -c ./src/bootloader/bootloader.c -o ./build/bootloader/bootloader.o -O0 ${CC_OPTIONS}
-
-build/bootloader2.o: build/bootloader/bootloader.o build/bootloader/boot2.o bootload.sys.ld \
-	build/screen/screen.o build/cpuio/cpuio.o build/bootloader/bootloader_stdlib.o \
-	build/screen/stdio.o build/screen/panic.o build/interrupts.o \
-	build/fs/floppy.o build/ps2/keyboard.o build/fs/fat16drv.o
-	ld -m elf_i386 -T bootload.sys.ld -o ./build/bootloader/bootloader2.o ./build/bootloader/boot2.o \
-		./build/bootloader/bootloader.o ./build/screen/screen.o ./build/cpuio/cpuio.o \
-		./build/bootloader/bootloader_stdlib.o ./build/screen/stdio.o \
-		./build/screen/panic.o ./build/interrupts.o ./build/fs/floppy.o \
-		./build/ps2/keyboard.o ./build/fs/fat16drv.o
-
-build/bootloader/BOOTLOAD.SYS: ./build/bootloader2.o
-	objcopy -O binary -j .text -j .bss -j .data -j .rodata ./build/bootloader/bootloader2.o ./build/bootloader/BOOTLOAD.SYS
 
 build/cpuio/cpuio.o: ./src/cpuio/cpuio.c
 	$(CC) -m32 -c ./src/cpuio/cpuio.c -o ./build/cpuio/cpuio.o ${CC_OPTIONS}
-
-build/floppy.img: ./build/bootloader/BOOTLOAD.SYS ./build/bootloader/boot.bin ./build/bootloader-writer/bootloader-write
-	dd if=/dev/zero of=build/floppy.img bs=512 count=2880
-	mkdosfs -F 12 ./build/floppy.img
-
-	./build/bootloader-writer/bootloader-write --image ./build/floppy.img --bootloader ./build/bootloader/boot.bin --fs fat12
-
-	echo "drive a: file=\"./build/floppy.img\"" > ./build/mtools.conf
-	MTOOLSRC=./build/mtools.conf mcopy ./build/bootloader/BOOTLOAD.SYS a:/BOOTLOAD.SYS
-	MTOOLSRC=./build/mtools.conf mmd a:/BOOT
-	MTOOLSRC=./build/mtools.conf mcopy ./build/fs/fat16drv.o a:/BOOT/VMLINUZ
 
 build/fs/fat16drv.o: ./src/fs/fat16drv.c
 	$(CC) -m32 -c ./src/fs/fat16drv.c -o ./build/fs/fat16drv.o ${CC_OPTIONS}
 
 build/fs/floppy.o: ./src/fs/floppy.c
 	$(CC) -m32 -c ./src/fs/floppy.c -o ./build/fs/floppy.o ${CC_OPTIONS}
+
+build/vmlinuz: build/kernel/kernel_main.o kernel.ld \
+	build/screen/screen.o build/cpuio/cpuio.o build/kernel/kernel_stdlib.o \
+	build/screen/stdio.o build/screen/panic.o build/interrupts.o \
+	build/fs/floppy.o build/ps2/keyboard.o build/fs/fat16drv.o \
+	build/kernel/multiboot.o build/kernel/bootstrap.o \
+	build/kernel/gdt/gdt.o build/kernel/pmm.o build/kernel/vmem.o
+	ld -m elf_i386 -T kernel.ld -z noexecstack -o build/vmlinuz \
+		./build/kernel/kernel_main.o ./build/screen/screen.o ./build/cpuio/cpuio.o \
+		./build/kernel/kernel_stdlib.o ./build/screen/stdio.o \
+		./build/screen/panic.o ./build/interrupts.o ./build/fs/floppy.o \
+		./build/ps2/keyboard.o ./build/fs/fat16drv.o ./build/kernel/multiboot.o \
+		./build/kernel/bootstrap.o ./build/kernel/gdt/gdt.o build/kernel/pmm.o \
+		./build/kernel/vmem.o
+
+build/img.iso: ./build/vmlinuz
+	mkdir -p build/isodir/boot/grub
+	cp ./build/vmlinuz build/isodir/boot/vmlinuz
+	cp grub.cfg build/isodir/boot/grub/grub.cfg
+	grub-mkrescue -o build/img.iso build/isodir
+
+build/kernel/gdt/gdt.o: ./src/kernel/gdt/gdt.c
+	$(CC) -m32 -c ./src/kernel/gdt/gdt.c -o ./build/kernel/gdt/gdt.o ${CC_OPTIONS}
+
+build/kernel/kernel_main.o: ./src/kernel/kernel_main.c
+	$(CC) -m32 -c ./src/kernel/kernel_main.c -o ./build/kernel/kernel_main.o ${CC_OPTIONS}
+
+build/kernel/kernel_stdlib.o: ./src/kernel/kernel_stdlib.c
+	$(CC) -m32 -c ./src/kernel/kernel_stdlib.c -o ./build/kernel/kernel_stdlib.o ${CC_OPTIONS}
+
+build/kernel/multiboot.o: ./src/kernel/multiboot.c
+	$(CC) -m32 -c ./src/kernel/multiboot.c -o ./build/kernel/multiboot.o ${CC_OPTIONS}
+
+build/kernel/bootstrap.o: ./src/kernel/bootstrap.asm
+	nasm -f elf32 ./src/kernel/bootstrap.asm -o ./build/kernel/bootstrap.o
+
+build/kernel/pmm.o: ./src/kernel/pmm.c
+	$(CC) -m32 -c ./src/kernel/pmm.c -o ./build/kernel/pmm.o ${CC_OPTIONS}
+
+build/kernel/vmem.o: ./src/kernel/vmem.c
+	$(CC) -m32 -c ./src/kernel/vmem.c -o ./build/kernel/vmem.o ${CC_OPTIONS}
 
 build/screen/screen.o: ./src/screen/screen.c
 	$(CC) -m32 -c ./src/screen/screen.c -o ./build/screen/screen.o ${CC_OPTIONS}
@@ -92,6 +94,7 @@ clean:
 	mkdir ${BUILD_DIR}/cpuio
 	mkdir ${BUILD_DIR}/fs
 	mkdir ${BUILD_DIR}/kernel
+	mkdir ${BUILD_DIR}/kernel/gdt
 	mkdir ${BUILD_DIR}/ps2
 	mkdir ${BUILD_DIR}/screen
 	mkdir ${DEBUG_DIR}

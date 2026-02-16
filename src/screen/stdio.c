@@ -1,6 +1,6 @@
 #include "stdio.h"
 #include "screen.h"
-#include "bootloader/bootloader_stdlib.h"
+#include "kernel/kernel_stdlib.h"
 #include "ps2/keyboard.h"
 
 #include <limits.h>
@@ -303,7 +303,7 @@ on_key_end:
 	redraw_gets_buffer();
 }
 
-int init_stdio(void)
+int stdio_init(void)
 {
 	return ps2_kb_set_callback(on_key);
 }

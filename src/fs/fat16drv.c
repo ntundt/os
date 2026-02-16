@@ -5,7 +5,7 @@
 
 #include <stdbool.h>
 
-#include "bootloader/bootloader_stdlib.h"
+#include "kernel/kernel_stdlib.h"
 
 #include "fs/fat16.h"
 #include "vfs.h"

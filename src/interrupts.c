@@ -1,6 +1,6 @@
 #include "interrupts.h"
 #include "screen/stdio.h"
-#include "bootloader/bootloader_stdlib.h"
+#include "kernel/kernel_stdlib.h"
 #include "cpuio/cpuio.h"
 
 #define STR_HELPER(x) #x

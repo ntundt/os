@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define VIDEO_MEMORY ((char *)0xB8000)
+#define VIDEO_MEMORY ((char *)0xC00B8000)
 #define VIDEO_MEMORY_SIZE 0xFA0
 #define VIDEO_MEMORY_END (VIDEO_MEMORY + VIDEO_MEMORY_SIZE)
 

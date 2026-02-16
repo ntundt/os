@@ -24,11 +24,7 @@
 
 int ps2_controller_present(void);
 
-void ps2_kb_init(void);
-
-void ps2_kb_set_leds(uint8_t leds);
-
-void ps2_kb_set_default_irq_handler();
+void ps2_init(void);
 
 int ps2_kb_set_callback(void (*callback)(uint16_t, uint8_t));
 
