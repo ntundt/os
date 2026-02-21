@@ -34,14 +34,15 @@ build/vmlinuz: build/kernel/kernel_main.o kernel.ld \
 	build/screen/stdio.o build/screen/panic.o build/interrupts.o \
 	build/fs/floppy.o build/ps2/keyboard.o build/fs/fat16drv.o \
 	build/kernel/multiboot.o build/kernel/bootstrap.o \
-	build/kernel/gdt/gdt.o build/kernel/pmm.o build/kernel/vmem.o
+	build/kernel/gdt/gdt.o build/kernel/pmm.o build/kernel/vmem.o \
+	build/kernel/vmem_layout.o build/kernel/kmalloc.o
 	ld -m elf_i386 -T kernel.ld -z noexecstack -o build/vmlinuz \
 		./build/kernel/kernel_main.o ./build/screen/screen.o ./build/cpuio/cpuio.o \
 		./build/kernel/kernel_stdlib.o ./build/screen/stdio.o \
 		./build/screen/panic.o ./build/interrupts.o ./build/fs/floppy.o \
 		./build/ps2/keyboard.o ./build/fs/fat16drv.o ./build/kernel/multiboot.o \
 		./build/kernel/bootstrap.o ./build/kernel/gdt/gdt.o build/kernel/pmm.o \
-		./build/kernel/vmem.o
+		./build/kernel/vmem.o ./build/kernel/vmem_layout.o build/kernel/kmalloc.o
 
 build/img.iso: ./build/vmlinuz
 	mkdir -p build/isodir/boot/grub
@@ -58,6 +59,9 @@ build/kernel/kernel_main.o: ./src/kernel/kernel_main.c
 build/kernel/kernel_stdlib.o: ./src/kernel/kernel_stdlib.c
 	$(CC) -m32 -c ./src/kernel/kernel_stdlib.c -o ./build/kernel/kernel_stdlib.o ${CC_OPTIONS}
 
+build/kernel/kmalloc.o: ./src/kernel/kmalloc.c
+	$(CC) -m32 -c ./src/kernel/kmalloc.c -o ./build/kernel/kmalloc.o ${CC_OPTIONS}
+
 build/kernel/multiboot.o: ./src/kernel/multiboot.c
 	$(CC) -m32 -c ./src/kernel/multiboot.c -o ./build/kernel/multiboot.o ${CC_OPTIONS}
 
@@ -66,6 +70,9 @@ build/kernel/bootstrap.o: ./src/kernel/bootstrap.asm
 
 build/kernel/pmm.o: ./src/kernel/pmm.c
 	$(CC) -m32 -c ./src/kernel/pmm.c -o ./build/kernel/pmm.o ${CC_OPTIONS}
+
+build/kernel/vmem_layout.o: ./src/kernel/vmem_layout.c
+	$(CC) -m32 -c ./src/kernel/vmem_layout.c -o ./build/kernel/vmem_layout.o ${CC_OPTIONS}
 
 build/kernel/vmem.o: ./src/kernel/vmem.c
 	$(CC) -m32 -c ./src/kernel/vmem.c -o ./build/kernel/vmem.o ${CC_OPTIONS}

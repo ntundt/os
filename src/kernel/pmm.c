@@ -11,8 +11,6 @@ extern uint8_t _kstart;
 extern uint8_t _kend;
 #define KERNEL_VIRT_BASE ((uint8_t *)0xC0000000)
 
-#define PMM_PAGE_SIZE 4096
-
 static void* pmm_bitmap_start = NULL;
 static uint32_t pmm_bitmap_length = 0;
 
@@ -66,7 +64,7 @@ void pmm_init(void)
 		void *region_end = ALIGN_DOWN((void*)end, PMM_PAGE_SIZE);
 		while (page < region_end) {
 			pmm_set_usable(page);
-			page = (void*)((uintptr_t)page + PMM_PAGE_SIZE);
+			page = (void*)((size_t)page + PMM_PAGE_SIZE);
 		}
 	}
 

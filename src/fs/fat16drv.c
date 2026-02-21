@@ -96,7 +96,8 @@ static inline size_t get_occupied_bytes_at_beginning(blkdev_t *blkdev)
 	return (bs->reserved_sectors + bs->number_of_fats * bs->sectors_per_fat + get_root_dir_sectors(blkdev)) * bs->bytes_per_sector;
 }
 
-static inline bool is_at_cluster_boundary(blkdev_t *blkdev, size_t offset)
+__attribute__((__unused__)) static inline bool
+is_at_cluster_boundary(blkdev_t *blkdev, size_t offset)
 {
 	struct fat16_boot_sector *bs = fat16_get_boot_sector(blkdev);
 	return (offset - get_occupied_bytes_at_beginning(blkdev)) % (bs->bytes_per_sector * bs->sectors_per_cluster) == 0;

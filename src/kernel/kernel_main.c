@@ -12,6 +12,8 @@
 #include "gdt/gdt.h"
 #include "pmm.h"
 #include "vmem.h"
+#include "vmem_layout.h"
+#include "kmalloc.h"
 
 #define IOBUF_SIZE 512
 
@@ -22,20 +24,22 @@ static void reboot(void)
 	while (1) { }
 }
 
-#define KERNEL_STACK_SIZE 16384
+extern uint8_t kernel_stack_top;
 
-static uint8_t kernel_stack[KERNEL_STACK_SIZE];
-
-void kernel_main(uint32_t multiboot_magic, void *multiboot_info)
+void __attribute__((__noreturn__))
+kmain(uint32_t multiboot_magic, void *multiboot_info)
 {
 	if (multiboot_magic != MULTIBOOT2_BOOTLOADER_MAGIC)
-		return;
+		reboot();
 
 	parse_multiboot(multiboot_info);
 
-	gdt_init((void *)kernel_stack);
+	gdt_init((void *)&kernel_stack_top);
+	vml_init();
 	pmm_init();
 	vm_init();
+
+	kmalloc_init();
 
 	stdio_init();
 	screen_clear();
@@ -55,13 +59,14 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info)
 	ps2_init();
 	irq_enable();
 
-	char answer[16];
+	char *answer = kmalloc(16);
+	assert(answer != NULL);
 	while (1) {
-		gets_s(answer, sizeof(answer));
+		gets_s(answer, 16);
 		if (strcmp(answer, "1") == 0) {
 			reboot();
 		} else {
-			memset(answer, 0, sizeof(answer));
+			memset(answer, 0, 16);
 			printf("Please choose wisely: ");
 		}
 	}

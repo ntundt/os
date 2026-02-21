@@ -6,6 +6,7 @@
 #include "screen/panic.h"
 #include "screen/stdio.h"
 #include "kernel_stdlib.h"
+#include "vmem_layout.h"
 
 #define PMM_PAGE_SIZE 4096
 #define KERNEL_VIRT_BASE 0xC0000000
@@ -30,7 +31,7 @@ static void invlpg(void *addr)
     __asm__ volatile ("invlpg (%0)" :: "r"(addr) : "memory");
 }
 
-__attribute__((unused)) static void invalidate_tlb(void)
+void vm_invalidate_tlb(void)
 {
 	uint32_t cr3;
 
@@ -72,18 +73,10 @@ static bool vm_temp_map_page(
 	return true;
 }
 
-/*
- * Kernel virtual memory is aligned like so:
- * 
- * v 0xC0000000      v 0xC0100000               |<---- 1 page ---->|
- * +-----------------+-------------+------------+------------------+
- * | Area below 1 MB | Kernel code | PMM bitmap | Vmem temp window |
- * +-----------------+-------------+------------+------------------+
- */
-
 void vm_init(void)
 {
-	temp_window = ALIGN_UP(ALIGN_UP(&_kend + 1, PMM_PAGE_SIZE) + pmm_get_bitmap_size(), PMM_PAGE_SIZE);
+	vml_runtime_region_t temp_window_region = vml_vmem_temp_window_region();
+	temp_window = (uint32_t *)temp_window_region.virt_base;
 	
 	page_directory_t *as = vm_create_address_space();
 

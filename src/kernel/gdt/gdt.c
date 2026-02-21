@@ -5,9 +5,13 @@ struct gdt_entry gdt[4];
 struct gdt_ptr gp;
 struct tss_entry tss;
 
-void gdt_set_gate(int num, uint32_t base, uint32_t limit,
-				  uint8_t access, uint8_t gran)
-{
+void gdt_set_gate(
+	int num,
+	uint32_t base,
+	uint32_t limit,
+	uint8_t access,
+	uint8_t gran
+) {
 	gdt[num].base_low    = (base & 0xFFFF);
 	gdt[num].base_mid    = (base >> 16) & 0xFF;
 	gdt[num].base_high   = (base >> 24) & 0xFF;

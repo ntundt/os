@@ -23,29 +23,42 @@ void vm_init(void);
 	- Enables paging
 */
 
+void vm_invalidate_tlb(void);
+
 void vm_set_address_space(page_directory_t *pd);
+page_directory_t *vm_get_current_address_space(void);
 
 page_directory_t *vm_create_address_space(void);
 void vm_destroy_address_space(page_directory_t *pd);
 
 void vm_switch_address_space(page_directory_t *pd);
 
-bool vm_map_page(page_directory_t *pd,
-				 virt_addr_t virt,
-				 phys_addr_t phys,
-				 page_flags_t flags);
+bool vm_map_page(
+	page_directory_t *pd,
+	virt_addr_t virt,
+	phys_addr_t phys,
+	page_flags_t flags
+);
 
-void vm_unmap_page(page_directory_t *pd,
-				   virt_addr_t virt);
+void vm_unmap_page(
+	page_directory_t *pd,
+	virt_addr_t virt
+);
 
-phys_addr_t vm_resolve(page_directory_t *pd,
-					   virt_addr_t virt);
+phys_addr_t vm_resolve(
+	page_directory_t *pd,
+	virt_addr_t virt
+);
 
-bool vm_alloc_page(page_directory_t *pd,
-				   virt_addr_t virt,
-				   page_flags_t flags);
+bool vm_alloc_page(
+	page_directory_t *pd,
+	virt_addr_t virt,
+	page_flags_t flags
+);
 
-void vm_free_page(page_directory_t *pd,
-				  virt_addr_t virt);
+void vm_free_page(
+	page_directory_t *pd,
+	virt_addr_t virt
+);
 
 #endif

@@ -43,17 +43,19 @@ page_table_low:
     resd 1024
 
 align 16
-stack_bottom:
+global kernel_stack
+global kernel_stack_top
+kernel_stack:
     resb 16384
-stack_top:
+kernel_stack_top:
 
 section .text
 global _start
-extern kernel_main
+extern kmain
 
 _start:
     cli
-    mov esp, stack_top
+    mov esp, kernel_stack_top
 
     ; Save multiboot params
     mov esi, eax
@@ -107,12 +109,12 @@ _start:
     ; Jump to higher half
     ; -------------------------
 higher_half_entry:
-    mov esp, stack_top
+    mov esp, kernel_stack_top
 
     push edi
     push esi
 
-    mov eax, kernel_main
+    mov eax, kmain
     call eax
 
 .hang:
